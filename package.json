@@ -1,0 +1,25 @@
+{
+  "name": "magicbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "magicBot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrandri19/magicBot.git"
+  },
+  "author": "Andrea Cognolato <andrecogno@hotmail.it> (https://github.com/mrandri19)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mrandri19/magicBot/issues"
+  },
+  "homepage": "https://github.com/mrandri19/magicBot#readme",
+  "dependencies": {
+    "cheerio": "^0.19.0",
+    "express": "^4.13.3",
+    "jade": "^1.11.0",
+    "request": "^2.61.0"
+  }
+}

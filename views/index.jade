@@ -1,0 +1,15 @@
+html
+    head
+        title MagicBot
+        link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css')
+        link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js')
+    body
+        h1 Insert here the cards
+        form(id='form0', name='fome0', method='post', action='/')
+            textarea(rows='8', cols='50', autofocus) cards have to be written like this
+                | cardname, quantity newline
+                | example : Mox Opal, 2
+            br
+            input.btn(type='submit', value='search')
+        h1 The results
+        div.jumbotron= results
