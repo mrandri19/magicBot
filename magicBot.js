@@ -29,10 +29,10 @@ function crawl(cardname, callback) {
     console.log('Requesting: '+url);
     request(options , function(error, response, body) {
         console.log(error+'     '+response.statusCode);
-        if (!error && response.statusCode == 200) {
+        if (!error && response.statusCode === 200) {
             console.log('Downloaded page');
             var $ = cheerio.load(body);
-            $();
+            $('tbody tr');
             callback('dawdwawdawd');
         }
     });
