@@ -31,9 +31,18 @@ function crawl(cardname, callback) {
         console.log(error+'     '+response.statusCode);
         if (!error && response.statusCode === 200) {
             console.log('Downloaded page');
+
             var $ = cheerio.load(body);
-            $('tbody tr');
-            callback('dawdwawdawd');
+            var names = {
+                text: [],
+                href: []
+            };
+
+            $('tbody > tr > td.col_3 > a').each(function(i, elem) {
+                names.text[i] = $(elem).text();
+                names.href[i] = $(elem).attr('href');
+            });
+            callback(names);
         }
     });
 }
@@ -53,9 +62,10 @@ app.get('/', function (req, res) {
 });
 app.post('/', function(req, res){
     var results = 'TEST';
-    results = crawl();
-    res.render('index', {
-        results: results
+    crawl('Mox Opal', function(data) { 
+        res.render('index', {
+            results: data
+        });
     });
 });
 
