@@ -67,7 +67,9 @@ function crawl(cardname, callback) {
                         names.price[i] = $('table.availTable tr td.cell_2_1').text();
                         console.log('Checking price: '+names.price[i]);
 
-                        callback(names);
+                        if(i === names.href.length-1) {
+                            callback(names);
+                        }
                     }
                 });
             });
@@ -80,7 +82,7 @@ app.set('view engine', 'jade');
 
 app.get('/daw', function(req, res) {
     crawl('Mox Opal', function(data) {
-        res.send(data);
+        res.json(data);
     });
 });
 app.get('/', function (req, res) {
