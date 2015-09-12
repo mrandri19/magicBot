@@ -7,6 +7,7 @@
  * passali allo script attraverso POST
  * per ogni inserzione, getta la pagina
  * https://it.magiccardmarket.eu/?mainPage=showSearchResult&searchFor=NOMECARTA
+ *
  * per ogni inserzione della pagina getta la pagina del singolo item
  * ottieni il prezzo medio
  */
@@ -19,30 +20,58 @@ var express = require('express');
 var app = express();
 
 function crawl(cardname, callback) {
-    var url = 'https://it.magiccardmarket.eu/?mainPage=showSearchResult&searchFor='+encodeURIComponent(cardname);
+    var searchUrl = 'https://it.magiccardmarket.eu/?mainPage=showSearchResult&searchFor=';
+    var url = searchUrl + encodeURIComponent(cardname);
+    var header = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.10 Safari/537.36'
+    };
     var options = {
         url: url,
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.10 Safari/537.36'
-        }
+        headers: header
     };
+
     console.log('Requesting: '+url);
     request(options , function(error, response, body) {
         console.log(error+'     '+response.statusCode);
+        
         if (!error && response.statusCode === 200) {
             console.log('Downloaded page');
 
             var $ = cheerio.load(body);
             var names = {
                 text: [],
-                href: []
+                href: [],
+                price: []
             };
 
             $('tbody > tr > td.col_3 > a').each(function(i, elem) {
-                names.text[i] = $(elem).text();
-                names.href[i] = $(elem).attr('href');
+                if(cardname === $(elem).text()) {
+                    names.text[i] = $(elem).text();
+                    names.href[i] = $(elem).attr('href');
+                }
             });
-            callback(names);
+            $ = null;
+            
+            names.href.forEach(function(link, i, array) {
+                var pricesUrl = "https://it.magiccardmarket.eu" + link;
+                var prices_options = {
+                    url: pricesUrl,
+                    headers: header
+                };
+                console.log(i+'  '+link);
+                request(prices_options, function(error, response, body) {
+                    if (!error && response.statusCode === 200) {
+                        console.log('Downloaded: '+link);
+                        $ = cheerio.load(body);
+
+                        names.price[i] = $('table.availTable tr td.cell_2_1').text();
+                        console.log('Checking price: '+names.price[i]);
+
+                        callback(names);
+                    }
+                });
+            });
+
         }
     });
 }
@@ -61,10 +90,9 @@ app.get('/', function (req, res) {
     });
 });
 app.post('/', function(req, res){
-    var results = 'TEST';
     crawl('Mox Opal', function(data) { 
         res.render('index', {
-            results: data
+            results: data.text
         });
     });
 });
