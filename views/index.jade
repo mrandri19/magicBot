@@ -3,10 +3,10 @@ html
         title MagicBot
         link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css')
         link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js')
-    body
+    body.container
         h1 Insert here the cards
-        form(id='form0', name='fome0', method='post', action='/')
-            textarea(rows='8', cols='50', autofocus) cards have to be written like this
+        form(method='post', action='/')
+            textarea(rows='8', cols='50', name="cards", autofocus) cards have to be written like this
                 | cardname, quantity newline
                 | example : Mox Opal, 2
             br

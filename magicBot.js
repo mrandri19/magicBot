@@ -16,8 +16,14 @@ var cheerio = require('cheerio');
 var request = require('request');
 var querystring = require('querystring');
 
+var bodyParser = require('body-parser');
 var express = require('express');
 var app = express();
+var bodyParser = require('body-parser');
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
+// in latest body-parser use like bellow.
+app.use(bodyParser.urlencoded({ extended: false }));
 
 function crawl(cardname, callback) {
     var searchUrl = 'https://it.magiccardmarket.eu/?mainPage=showSearchResult&searchFor=';
@@ -33,7 +39,7 @@ function crawl(cardname, callback) {
     console.log('Requesting: '+url);
     request(options , function(error, response, body) {
         console.log(error+'     '+response.statusCode);
-        
+
         if (!error && response.statusCode === 200) {
             console.log('Downloaded page');
 
@@ -41,7 +47,8 @@ function crawl(cardname, callback) {
             var names = {
                 text: [],
                 href: [],
-                price: []
+                price: [],
+                ok: true
             };
 
             $('tbody > tr > td.col_3 > a').each(function(i, elem) {
@@ -51,8 +58,8 @@ function crawl(cardname, callback) {
                 }
             });
             $ = null;
-            
-            names.href.forEach(function(link, i, array) {
+
+            names.href.forEach(function(link, i) {
                 var pricesUrl = "https://it.magiccardmarket.eu" + link;
                 var prices_options = {
                     url: pricesUrl,
@@ -82,19 +89,24 @@ app.set('view engine', 'jade');
 
 app.get('/daw', function(req, res) {
     crawl('Mox Opal', function(data) {
-        res.json(data);
+        if(data) {
+            res.json(data);
+            return;
+        }
+        res.json({ok:false});
     });
 });
 app.get('/', function (req, res) {
+    console.log('Got: ' + res.method + 'request from: ' +req.connection.remoteAddress);
     var results = 'EXAMPLE: Mox Opal, 34.12';
     res.render('index', {
-        results: results 
+        results: results
     });
 });
 app.post('/', function(req, res){
-    crawl('Mox Opal', function(data) { 
+    crawl(req.body.cards, function(data) {
         res.render('index', {
-            results: data.text
+                results: JSON.stringify(data)
         });
     });
 });
