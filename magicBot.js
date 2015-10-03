@@ -38,12 +38,10 @@ function crawl(cardname, callback) {
 
     console.log('Requesting: '+url);
     request(options , function(error, response, body) {
-        console.log(error+'     '+response.statusCode);
 
         if (!error && response.statusCode === 200) {
-            console.log('Downloaded page');
+            console.log('Downloaded search page');
 
-            var $ = cheerio.load(body);
             var names = {
                 text: [],
                 href: [],
@@ -51,36 +49,68 @@ function crawl(cardname, callback) {
                 ok: true
             };
 
+            var $ = cheerio.load(body);
+            console.log('Parsing the page');
+
+            //Check if there are hrefs in the search page
+            var href_lenght =  $('tbody > tr > td.col_3 > a').length;
+            if (href_lenght < 1) {
+                callback({ok: false});
+                console.log('No hrefs found');
+                return;
+            }
+            console.log('Found ' + href_lenght + ' hrefs');
+
+            //For each href compare its name with the cardname, after lowercasing it
+            //if they match add the name and the href to the names object
             $('tbody > tr > td.col_3 > a').each(function(i, elem) {
-                if(cardname === $(elem).text()) {
+                if(cardname.toLowerCase() === $(elem).text().toLowerCase()) {
+                    console.log('Found a cardname');
                     names.text[i] = $(elem).text();
                     names.href[i] = $(elem).attr('href');
                 }
             });
-            $ = null;
 
+            //Reset cheerio
+            $ = null;
+            
+            console.log(names);
+
+            //If hrefs have been found
+            if (names.href.length < 1) {
+                console.log('No links found, returning false');
+                callback({ok: false});
+                return;
+            }
             names.href.forEach(function(link, i) {
+                //Build the url and request
                 var pricesUrl = "https://it.magiccardmarket.eu" + link;
                 var prices_options = {
                     url: pricesUrl,
                     headers: header
                 };
-                console.log(i+'  '+link);
+                console.log(i + 'Downloading: ' + link);
                 request(prices_options, function(error, response, body) {
                     if (!error && response.statusCode === 200) {
-                        console.log('Downloaded: '+link);
                         $ = cheerio.load(body);
 
                         names.price[i] = $('table.availTable tr td.cell_2_1').text();
                         console.log('Checking price: '+names.price[i]);
 
+                        //If we hahve finished parsing through all of the hrefs in names
                         if(i === names.href.length-1) {
                             callback(names);
                         }
+                    } else {
+                        console.log('Price page request returned error: '+ response.statusCode);
+                        callback({ok: false});
                     }
                 });
             });
 
+        } else {
+            console.log('Search page request returned error: ' + error + " and statusCode: "+ response.statusCode);
+            callback({ok: false});
         }
     });
 }
@@ -96,6 +126,7 @@ app.get('/daw', function(req, res) {
         res.json({ok:false});
     });
 });
+
 app.get('/', function (req, res) {
     console.log('Got: ' + res.method + 'request from: ' +req.connection.remoteAddress);
     var results = 'EXAMPLE: Mox Opal, 34.12';
@@ -103,6 +134,7 @@ app.get('/', function (req, res) {
         results: results
     });
 });
+
 app.post('/', function(req, res){
     crawl(req.body.cards, function(data) {
         res.render('index', {
