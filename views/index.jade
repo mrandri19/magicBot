@@ -12,4 +12,5 @@ html
             br
             input.btn(type='submit', value='search')
         h1 The results
-        div.jumbotron= results
+        div.jumbotron= -for(var price in results)
+            p #price

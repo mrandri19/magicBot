@@ -20,12 +20,15 @@ var bodyParser = require('body-parser');
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 // in latest body-parser use like bellow.
 app.use(bodyParser.urlencoded({ extended: false }));
 
+//TODOOOO: this function is fucking long, boy
 function crawl(cardname, callback) {
+    //Building the url for the search page
     var searchUrl = 'https://it.magiccardmarket.eu/?mainPage=showSearchResult&searchFor=';
     var url = searchUrl + encodeURIComponent(cardname);
     var header = {
@@ -117,19 +120,9 @@ function crawl(cardname, callback) {
 
 app.set('view engine', 'jade');
 
-app.get('/daw', function(req, res) {
-    crawl('Mox Opal', function(data) {
-        if(data) {
-            res.json(data);
-            return;
-        }
-        res.json({ok:false});
-    });
-});
-
 app.get('/', function (req, res) {
-    console.log('Got: ' + res.method + 'request from: ' +req.connection.remoteAddress);
-    var results = 'EXAMPLE: Mox Opal, 34.12';
+    console.log('Got: ' + res.method + ' request from: ' +req.connection.remoteAddress);
+    var results = 'EXAMPLE: Mox Opal';
     res.render('index', {
         results: results
     });
@@ -138,7 +131,7 @@ app.get('/', function (req, res) {
 app.post('/', function(req, res){
     crawl(req.body.cards, function(data) {
         res.render('index', {
-                results: JSON.stringify(data)
+                results: data
         });
     });
 });
