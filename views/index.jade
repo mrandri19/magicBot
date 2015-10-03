@@ -12,5 +12,11 @@ html
             br
             input.btn(type='submit', value='search')
         h1 The results
-        div.jumbotron= -for(var price in results)
-            p #price
+        div.jumbotron
+            if !results.ok
+                p.alert.alert-danger ERROR
+            else
+                p You searched for #{results.text[0]}
+                ul.list-group
+                    each val in results.price
+                        li.list-group-item=val

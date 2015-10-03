@@ -122,7 +122,7 @@ app.set('view engine', 'jade');
 
 app.get('/', function (req, res) {
     console.log('Got: ' + res.method + ' request from: ' +req.connection.remoteAddress);
-    var results = 'EXAMPLE: Mox Opal';
+    var results = '';
     res.render('index', {
         results: results
     });
@@ -130,6 +130,9 @@ app.get('/', function (req, res) {
 
 app.post('/', function(req, res){
     crawl(req.body.cards, function(data) {
+        if (data.length < 0) {
+            data = {ok: false};
+        }
         res.render('index', {
                 results: data
         });
