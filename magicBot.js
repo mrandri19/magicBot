@@ -11,7 +11,7 @@
  * per ogni inserzione della pagina getta la pagina del singolo item
  * ottieni il prezzo medio
  */
-var RSVP = require('RSVP');
+var RSVP = require('rsvp');
 var cheerio = require('cheerio');
 var request = require('request');
 var querystring = require('querystring');
@@ -32,8 +32,6 @@ function parseData(data, callback) {
 }
 
 function parsePrices(i, names, body, $, callback) {
-
-    var promise = new RSVP.Promise(function(series_callback) {
         $ = cheerio.load(body);
 
         //Remove half of the string to remove the double repeated price
@@ -42,8 +40,10 @@ function parsePrices(i, names, body, $, callback) {
         names.price[i] = tmp;
 
         console.log('Checking price: '+names.price[i]);
-        resolve();
-    }
+        if(i === names.href.length-1) {
+            callback(names);
+        }
+
 }
 
 //TODOOOO: this function is fucking long, boy
