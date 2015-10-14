@@ -11,7 +11,7 @@
  * per ogni inserzione della pagina getta la pagina del singolo item
  * ottieni il prezzo medio
  */
-
+var RSVP = require('RSVP');
 var cheerio = require('cheerio');
 var request = require('request');
 var querystring = require('querystring');
@@ -25,6 +25,26 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 // in latest body-parser use like bellow.
 app.use(bodyParser.urlencoded({ extended: false }));
+
+function parseData(data, callback) {
+    var parsedData = data.split('\n');
+    return callback(parsedData);
+}
+
+function parsePrices(i, names, body, $, callback) {
+
+    var promise = new RSVP.Promise(function(series_callback) {
+        $ = cheerio.load(body);
+
+        //Remove half of the string to remove the double repeated price
+        var tmp = $('table.availTable tr td.cell_2_1').text();
+        tmp = tmp.slice(tmp.length/2);
+        names.price[i] = tmp;
+
+        console.log('Checking price: '+names.price[i]);
+        resolve();
+    }
+}
 
 //TODOOOO: this function is fucking long, boy
 function crawl(cardname, callback) {
@@ -58,9 +78,8 @@ function crawl(cardname, callback) {
             //Check if there are hrefs in the search page
             var href_lenght =  $('tbody > tr > td.col_3 > a').length;
             if (href_lenght < 1) {
-                callback({ok: false});
                 console.log('No hrefs found');
-                return;
+                return callback({ok: false});
             }
             console.log('Found ' + href_lenght + ' hrefs');
 
@@ -76,15 +95,15 @@ function crawl(cardname, callback) {
 
             //Reset cheerio
             $ = null;
-            
+
             console.log(names);
 
             //If hrefs have been found
             if (names.href.length < 1) {
                 console.log('No links found, returning false');
-                callback({ok: false});
-                return;
+                return callback({ok: false});
             }
+
             names.href.forEach(function(link, i) {
                 //Build the url and request
                 var pricesUrl = "https://it.magiccardmarket.eu" + link;
@@ -92,28 +111,23 @@ function crawl(cardname, callback) {
                     url: pricesUrl,
                     headers: header
                 };
-                console.log(i + 'Downloading: ' + link);
+
+                console.log(i + ' Downloading: ' + link);
                 request(prices_options, function(error, response, body) {
+
                     if (!error && response.statusCode === 200) {
-                        $ = cheerio.load(body);
-
-                        names.price[i] = $('table.availTable tr td.cell_2_1').text();
-                        console.log('Checking price: '+names.price[i]);
-
-                        //If we hahve finished parsing through all of the hrefs in names
-                        if(i === names.href.length-1) {
-                            callback(names);
-                        }
+                        parsePrices(i, names, body, $, callback);
                     } else {
                         console.log('Price page request returned error: '+ response.statusCode);
-                        callback({ok: false});
+                        return callback({ok: false});
                     }
-                });
-            });
+
+                });//End of request
+            });//End of foreachLink
 
         } else {
             console.log('Search page request returned error: ' + error + " and statusCode: "+ response.statusCode);
-            callback({ok: false});
+            return callback({ok: false});
         }
     });
 }
@@ -129,12 +143,16 @@ app.get('/', function (req, res) {
 });
 
 app.post('/', function(req, res){
-    crawl(req.body.cards, function(data) {
-        if (data.length < 0) {
-            data = {ok: false};
-        }
-        res.render('index', {
-                results: data
+    parseData(req.body.cards, function(cards) {
+        console.log(cards);
+        crawl(cards[0], function(data) {
+            if (data.length < 0) {
+                data = {ok: false};
+            }
+            console.log("Rendering .jade");
+            res.render('index', {
+                    results: data
+            });
         });
     });
 });
