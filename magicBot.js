@@ -22,7 +22,6 @@ var app = express();
 var bodyParser = require('body-parser');
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded());
 // in latest body-parser use like bellow.
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -32,17 +31,20 @@ function parseData(data, callback) {
 }
 
 function parsePrices(i, names, body, $, callback) {
-        $ = cheerio.load(body);
 
-        //Remove half of the string to remove the double repeated price
-        var tmp = $('table.availTable tr td.cell_2_1').text();
-        tmp = tmp.slice(tmp.length/2);
-        names.price[i] = tmp;
+    $ = cheerio.load(body);
 
-        console.log('Checking price: '+names.price[i]);
-        if(i === names.href.length-1) {
-            callback(names);
-        }
+    //Remove half of the string to remove the double repeated price
+    var tmp = $('table.availTable tr td.cell_2_1').text();
+    tmp = tmp.slice(tmp.length/2);
+    names.price[i] = tmp;
+
+    console.log('Checking price: '+names.price[i]);
+    console.log(i);
+
+    if(i === names.href.length-1) {
+        return callback(names);
+    }
 
 }
 
@@ -104,26 +106,33 @@ function crawl(cardname, callback) {
                 return callback({ok: false});
             }
 
-            names.href.forEach(function(link, i) {
+            var i = 0;
+            for(i = 0; i<names.href.length; i++){
+                if (names.href[i] === undefined) {
+                    continue;
+                }
+
                 //Build the url and request
-                var pricesUrl = "https://it.magiccardmarket.eu" + link;
+                var pricesUrl = "https://it.magiccardmarket.eu" + names.href[i];
                 var prices_options = {
                     url: pricesUrl,
                     headers: header
                 };
 
-                console.log(i + ' Downloading: ' + link);
+                console.log(i + ' Downloading: ' + names.href[i]);
+
+                console.log("i before request: "+i);
                 request(prices_options, function(error, response, body) {
 
                     if (!error && response.statusCode === 200) {
+                        console.log("i before parsePrices: "+i);
                         parsePrices(i, names, body, $, callback);
                     } else {
                         console.log('Price page request returned error: '+ response.statusCode);
                         return callback({ok: false});
                     }
-
                 });//End of request
-            });//End of foreachLink
+            }
 
         } else {
             console.log('Search page request returned error: ' + error + " and statusCode: "+ response.statusCode);
