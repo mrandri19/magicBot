@@ -1,0 +1,3 @@
+# magicBot
+- daw
+- daw1
