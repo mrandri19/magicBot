@@ -6,14 +6,12 @@ html
     body.container
         h1 Insert here the cards
         form(method='post', action='/')
-            textarea(rows='8', cols='50', name="cards", autofocus) cards have to be written like this
-                | cardname, quantity newline
-                | example : Mox Opal, 2
+            textarea(rows='8', cols='50', name="cards", autofocus, placeholder="Insert card names here")
             br
             input.btn(type='submit', value='search')
         h1 The results
         div.jumbotron
-            if !results.ok
+            unless results.ok
                 p.alert.alert-danger ERROR
             else
                 p You searched for #{results.text[0]}
