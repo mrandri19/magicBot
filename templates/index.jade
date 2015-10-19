@@ -14,7 +14,7 @@ html
             unless results.ok
                 p.alert.alert-danger ERROR
             else
-                p You searched for #{results.text[0]}
+                p You searched for #{results.name}
                 ul.list-group
-                    each val in results.price
+                    each val in results.prices
                         li.list-group-item=val
