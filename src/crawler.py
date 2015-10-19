@@ -51,8 +51,8 @@ def search_card(card_name):
 
     # Code for 1-page-card
     if "Products" in r.url:
-        daw = r.url.split(".eu")[1]
-        return [daw]
+        singe_card_href = r.url.split(".eu")[1]
+        return [single_card_href]
 
     card_hrefs = parse_search_page(r.text, card_name)
     return card_hrefs
