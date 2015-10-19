@@ -4,13 +4,15 @@ import pyjade
 import requests
 import json
 
-app = Flask(__name__)
+TEMPLATE_NAME = "index.jade"
+TEMPLATE_FOLDER = "../templates/"
+
+app = Flask(__name__, template_folder=TEMPLATE_FOLDER)
 app.jinja_env.add_extension('pyjade.ext.jinja.PyJadeExtension')
 app.debug = True
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    TEMPLATE_NAME = 'index.jade'
     cards = []
     if request.method == 'GET':
         data = None
@@ -26,10 +28,15 @@ def index():
             tmp_card["prices"] = card_prices
             cards.append(tmp_card)
 
-        return_str =""
-        for card in cards:
-            return_str = return_str + json.dumps(card) + ","
-        return render_template(TEMPLATE_NAME, results=return_str)
+        return json_convert_cards(cards)
+
+def json_convert_cards(cards):
+    data = "\n"
+    for card in cards:
+        data = data + "\n" + card["name"] + ": " + " ".join(card["prices"])
+    print(data)
+
+    return data
 
 
 def parse_request(cards_requested):
