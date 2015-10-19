@@ -22,7 +22,6 @@ def index():
         for card_name in card_names:
             tmp_card = {}
             card_hrefs = search_card(card_name)
-            print("card_hrefs: ", card_hrefs)
             card_prices = get_card_prices(card_hrefs)
 
             tmp_card["name"] = card_name
@@ -51,7 +50,6 @@ def search_card(card_name):
     r = requests.get(URL , params=payload, headers=HEADERS)
 
     # Code for 1-page-card
-    print(r.url)
     if "Products" in r.url:
         daw = r.url.split(".eu")[1]
         return [daw]
@@ -73,12 +71,10 @@ def parse_search_page(body, card_name):
 
 def get_card_prices(card_hrefs):
     card_prices = []
-    print("len card_hrefs: ",len(card_hrefs))
     for card_href in card_hrefs:
         card_url = "https://it.magiccardmarket.eu"
         card_url += card_href
 
-        print("card_url: ",card_url)
         r = requests.get(card_url)
         card_prices.append(parse_price_page(r.text))
 
