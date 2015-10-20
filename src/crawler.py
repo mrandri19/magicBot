@@ -3,6 +3,8 @@ from pyquery import PyQuery as pq
 import pyjade
 import requests
 import json
+from threading import Thread
+from queue import Queue
 
 TEMPLATE_NAME = "index.jade"
 TEMPLATE_FOLDER = "../templates/"
@@ -70,13 +72,50 @@ def parse_search_page(body, card_name):
     return parsed_card_hrefs
 
 def get_card_prices(card_hrefs):
-    card_prices = []
+    card_urls = []
     for card_href in card_hrefs:
         card_url = "https://it.magiccardmarket.eu"
         card_url += card_href
+        card_urls.append(card_url)
+    print(card_urls)
 
-        r = requests.get(card_url)
-        card_prices.append(parse_price_page(r.text))
+    card_prices = concurrent_download(card_urls)
+    return card_prices
+
+def concurrent_download(urls):
+    q = Queue()
+    threads = []
+
+
+    card_prices = []
+    responses = []
+
+    def downloader():
+        while True:
+            url = q.get()
+            if url is None:
+                break
+            res = requests.get(url)
+            responses.append(res.text)
+            q.task_done()
+
+    # There will be as many threads as urls
+    # Currently the cuncurrent download happens on a singe card
+    for url in urls:
+        q.put(url)
+        t = Thread(target=downloader)
+        t.start()
+        threads.append(t)
+
+    q.join()
+    for url in urls:
+        q.put(None)
+
+    for t in threads:
+        t.join()
+
+    for res in responses:
+        card_prices.append(parse_price_page(res))
 
     return card_prices
 
