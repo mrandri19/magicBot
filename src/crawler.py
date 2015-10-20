@@ -62,12 +62,10 @@ def html_convert_cards(cards):
 
         min_price = min(card["prices"])
         avg_price = mean(card["prices"])
-        data = data + card["name"] + ": " + "Average price: {:.2f}".format(avg_price)\
-            + " Minimum price: {}".format(min_price) + " All prices: " +\
-            ", ".join(parsed_prices) + "<br>"
+        data = data + card["name"] + ": " + "<strong>Average price:</strong> {:.2f}".format(avg_price)\
+                + " <strong>Minimum price:</strong> {}".format(min_price) + " <strong>All prices:<strong> " +\
+            ", ".join(parsed_prices) + "<br />"
 
-
-    print(data)
     return data
 
 
