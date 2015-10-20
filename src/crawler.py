@@ -3,6 +3,7 @@ from pyquery import PyQuery as pq
 import pyjade
 import requests
 import json
+from statistics import mean
 from threading import Thread
 from queue import Queue
 
@@ -26,16 +27,40 @@ def index():
             card_hrefs = search_card(card_name)
             card_prices = get_card_prices(card_hrefs)
 
+            tmp_card["prices"] = parse_card_prices(card_prices)
             tmp_card["name"] = card_name
-            tmp_card["prices"] = card_prices
+
             cards.append(tmp_card)
 
-        return json_convert_cards(cards)
+        return html_convert_cards(cards)
 
-def json_convert_cards(cards):
+def parse_card_prices(card_prices):
+    parsed_card_prices = []
+
+    # Remove the euro and the whitespace from the price
+    # The card price might be null, if so continue
+    for card_price in card_prices:
+        if not card_price:
+            continue
+        daw = str(card_price)
+        daw = daw.strip("€").strip()
+        daw = daw.replace(",",".")
+        daw = float(daw)
+        parsed_card_prices.append(daw)
+        
+    return parsed_card_prices
+
+def html_convert_cards(cards):
     data = ""
     for card in cards:
-        data = data + card["name"] + ": " + " ".join(card["prices"]) + "<br>"
+        prices = card["prices"]
+        parsed_prices = []
+        for price in prices:
+            parsed_prices.append(str(price))
+        min_price = min(card["prices"])
+        avg_price = mean(card["prices"])
+        data = data + card["name"] + ": " + "Average price: {:.2f}".format(avg_price) + " Minimum price: {}".format(min_price) + " All prices: " + ", ".join(parsed_prices) + "<br>"
+
 
     return data
 
@@ -53,7 +78,7 @@ def search_card(card_name):
 
     # Code for 1-page-card
     if "Products" in r.url:
-        singe_card_href = r.url.split(".eu")[1]
+        single_card_href = r.url.split(".eu")[1]
         return [single_card_href]
 
     card_hrefs = parse_search_page(r.text, card_name)
@@ -77,7 +102,6 @@ def get_card_prices(card_hrefs):
         card_url = "https://it.magiccardmarket.eu"
         card_url += card_href
         card_urls.append(card_url)
-    print(card_urls)
 
     card_prices = concurrent_download(card_urls)
     return card_prices
