@@ -7,7 +7,8 @@ from statistics import mean
 from threading import Thread
 from queue import Queue
 
-TEMPLATE_NAME = "index.jade"
+TEMPLATE_NAME_INDEX = "index.jade"
+TEMPLATE_NAME_RESULTS = "results.jade"
 TEMPLATE_FOLDER = "../templates/"
 
 app = Flask(__name__, template_folder=TEMPLATE_FOLDER)
@@ -19,7 +20,7 @@ def index():
     cards = []
     if request.method == 'GET':
         data = None
-        return render_template(TEMPLATE_NAME, results = data)
+        return render_template(TEMPLATE_NAME_INDEX, results = data)
     if request.method == 'POST':
         card_names = parse_request(request.form['cards'])
         for card_name in card_names:
@@ -32,7 +33,7 @@ def index():
 
             cards.append(tmp_card)
 
-        return html_convert_cards(cards)
+        return render_template(TEMPLATE_NAME_RESULTS, results=html_convert_cards(cards))
 
 def parse_card_prices(card_prices):
     parsed_card_prices = []
@@ -47,7 +48,7 @@ def parse_card_prices(card_prices):
         daw = daw.replace(",",".")
         daw = float(daw)
         parsed_card_prices.append(daw)
-        
+
     return parsed_card_prices
 
 def html_convert_cards(cards):
@@ -55,13 +56,18 @@ def html_convert_cards(cards):
     for card in cards:
         prices = card["prices"]
         parsed_prices = []
+
         for price in prices:
             parsed_prices.append(str(price))
+
         min_price = min(card["prices"])
         avg_price = mean(card["prices"])
-        data = data + card["name"] + ": " + "Average price: {:.2f}".format(avg_price) + " Minimum price: {}".format(min_price) + " All prices: " + ", ".join(parsed_prices) + "<br>"
+        data = data + card["name"] + ": " + "Average price: {:.2f}".format(avg_price)\
+            + " Minimum price: {}".format(min_price) + " All prices: " +\
+            ", ".join(parsed_prices) + "<br>"
 
 
+    print(data)
     return data
 
 
@@ -87,7 +93,7 @@ def search_card(card_name):
 def parse_search_page(body, card_name):
     parsed_card_hrefs = []
 
-    d = pq(body, parser='html')
+    d = pq(body, parser="html")
     card_hrefs = d("tbody > tr > td.col_3 > a").items()
 
     for href in card_hrefs:
@@ -109,7 +115,6 @@ def get_card_prices(card_hrefs):
 def concurrent_download(urls):
     q = Queue()
     threads = []
-
 
     card_prices = []
     responses = []
@@ -144,7 +149,7 @@ def concurrent_download(urls):
     return card_prices
 
 def parse_price_page(body):
-    d = pq(body, parser='html')
+    d = pq(body, parser="html")
     card_price = d("#Dettagliprodotto > div > div.prodDetails > div:nth-child(3) > table > tbody > tr.row_Even.row_2 > td.outerRight.col_Odd.col_1.cell_2_1").text()
     if card_price is not None:
         return card_price
