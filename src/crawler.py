@@ -3,6 +3,7 @@ from pyquery import PyQuery as pq
 import pyjade
 import requests
 import json
+from urllib.parse import unquote_plus
 from statistics import mean
 from threading import Thread
 from queue import Queue
@@ -25,15 +26,32 @@ def index():
         card_names = parse_request(request.form['cards'])
         for card_name in card_names:
             tmp_card = {}
-            card_hrefs = search_card(card_name)
-            card_prices = get_card_prices(card_hrefs)
 
-            tmp_card["prices"] = parse_card_prices(card_prices)
+            card_hrefs = search_card(card_name)
+
+            card_editions = get_card_edition(card_hrefs)
+
+            card_prices = get_card_prices(card_hrefs)
+            card_prices = parse_card_prices(card_prices)
+
+            tmp_card["prices"] = []
+            assert(len(card_editions) == len(card_prices))
+            for i in range(len(card_editions)):
+                tmp_card["prices"].append({"price": card_prices[i], "edition": card_editions[i]})
+
             tmp_card["name"] = card_name
 
             cards.append(tmp_card)
 
         return render_template(TEMPLATE_NAME_RESULTS, results=html_convert_cards(cards))
+
+def get_card_edition(card_hrefs):
+    editions = []
+    for href in card_hrefs:
+        edition = href.split("/")[3]
+        edition = unquote_plus(edition)
+        editions.append(edition)
+    return editions
 
 def parse_card_prices(card_prices):
     parsed_card_prices = []
@@ -42,6 +60,7 @@ def parse_card_prices(card_prices):
     # The card price might be null, if so continue
     for card_price in card_prices:
         if not card_price:
+            parsed_card_prices.append("Not found")
             continue
         daw = str(card_price)
         daw = daw.strip("€").strip()
@@ -56,16 +75,26 @@ def html_convert_cards(cards):
     for card in cards:
         prices = card["prices"]
         parsed_prices = []
+        parsed_num_prices = []
 
         for price in prices:
-            parsed_prices.append(str(price))
+            parsed_prices.append(str(price["price"]))
+            if price["price"] != "Not found":
+                parsed_num_prices.append(price["price"])
 
-        min_price = min(card["prices"])
-        avg_price = mean(card["prices"])
-        data = data + card["name"] + ": " + "<strong>Average price:</strong> {:.2f}".format(avg_price)\
+        min_price = min(parsed_num_prices)
+        avg_price = mean(parsed_num_prices)
+        # TODO: FUCKING CLEAN
+        data += card["name"] + ": " + "<strong>Average price:</strong> {:.2f}".format(avg_price)\
                 + " <strong>Minimum price:</strong> {}".format(min_price) + " <strong>All prices:</strong> " +\
-            ", ".join(parsed_prices) + "<br />"
+            format_price_and_edition(prices) + "<br />"
 
+    return data
+
+def format_price_and_edition(prices):
+    data = ""
+    for price in prices:
+        data += "Edition: {} Price: {} ".format(price["edition"], price["price"])
     return data
 
 
