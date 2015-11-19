@@ -11,6 +11,7 @@ from queue import Queue
 TEMPLATE_NAME_INDEX = "index.jade"
 TEMPLATE_NAME_RESULTS = "results.jade"
 TEMPLATE_FOLDER = "../templates/"
+BLACKLISTED_EDITIONS = ["WCD 1999: Matt Linde"]
 
 app = Flask(__name__, template_folder=TEMPLATE_FOLDER)
 app.jinja_env.add_extension('pyjade.ext.jinja.PyJadeExtension')
@@ -34,10 +35,8 @@ def index():
             card_prices = get_card_prices(card_hrefs)
             card_prices = parse_card_prices(card_prices)
 
-            tmp_card["prices"] = []
-            assert(len(card_editions) == len(card_prices))
-            for i in range(len(card_editions)):
-                tmp_card["prices"].append({"price": card_prices[i], "edition": card_editions[i]})
+            tmp_card["prices"] = fill_card_prices(card_editions, card_prices)
+            
 
             tmp_card["name"] = card_name
 
@@ -45,7 +44,24 @@ def index():
 
         return render_template(TEMPLATE_NAME_RESULTS, results=html_convert_cards(cards))
 
+def fill_card_prices(card_editions, card_prices):
+    #Fill the price array with a dictionary whoose fields are price and edition
+    #If the card belongs to the one of the blacklisted editions dont put it in the array
+    prices = []
+
+    #This should always be true, if the price doesnt exist it should be "Not Found"
+    assert(len(card_editions) == len(card_prices))
+
+    for i in range(len(card_editions)):
+        if card_editions[i] not in BLACKLISTED_EDITIONS:
+            prices.append({"price": card_prices[i], "edition": card_editions[i]})
+
+    return prices
+
 def get_card_edition(card_hrefs):
+    # The hrefs need to be URIs not, URLs
+    # Like this: 
+    # /Products/Singles/Scars+of+Mirrodin/Mox+Opal
     editions = []
     for href in card_hrefs:
         edition = href.split("/")[3]
