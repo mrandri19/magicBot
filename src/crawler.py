@@ -2,7 +2,6 @@ from flask import Flask, render_template, request
 from pyquery import PyQuery as pq
 import pyjade
 import requests
-import json
 from urllib.parse import unquote_plus
 from statistics import mean
 from threading import Thread
@@ -17,12 +16,13 @@ app = Flask(__name__, template_folder=TEMPLATE_FOLDER)
 app.jinja_env.add_extension('pyjade.ext.jinja.PyJadeExtension')
 app.debug = True
 
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     cards = []
     if request.method == 'GET':
         data = None
-        return render_template(TEMPLATE_NAME_INDEX, results = data)
+        return render_template(TEMPLATE_NAME_INDEX, results=data)
     if request.method == 'POST':
         card_names = parse_request(request.form['cards'])
         for card_name in card_names:
@@ -36,7 +36,6 @@ def index():
             card_prices = parse_card_prices(card_prices)
 
             tmp_card["prices"] = fill_card_prices(card_editions, card_prices)
-            
 
             tmp_card["name"] = card_name
 
@@ -44,12 +43,13 @@ def index():
 
         return render_template(TEMPLATE_NAME_RESULTS, results=html_convert_cards(cards))
 
+
 def fill_card_prices(card_editions, card_prices):
-    #Fill the price array with a dictionary whoose fields are price and edition
-    #If the card belongs to the one of the blacklisted editions dont put it in the array
+    # Fill the price array with a dictionary whoose fields are price and edition
+    # If the card belongs to the one of the blacklisted editions dont put it in the array
     prices = []
 
-    #This should always be true, if the price doesnt exist it should be "Not Found"
+    # This should always be true, if the price doesnt exist it should be "Not Found"
     assert(len(card_editions) == len(card_prices))
 
     for i in range(len(card_editions)):
@@ -58,9 +58,10 @@ def fill_card_prices(card_editions, card_prices):
 
     return prices
 
+
 def get_card_edition(card_hrefs):
     # The hrefs need to be URIs not, URLs
-    # Like this: 
+    # Like this:
     # /Products/Singles/Scars+of+Mirrodin/Mox+Opal
     editions = []
     for href in card_hrefs:
@@ -68,6 +69,7 @@ def get_card_edition(card_hrefs):
         edition = unquote_plus(edition)
         editions.append(edition)
     return editions
+
 
 def parse_card_prices(card_prices):
     parsed_card_prices = []
@@ -80,11 +82,12 @@ def parse_card_prices(card_prices):
             continue
         daw = str(card_price)
         daw = daw.strip("€").strip()
-        daw = daw.replace(",",".")
+        daw = daw.replace(",", ".")
         daw = float(daw)
         parsed_card_prices.append(daw)
 
     return parsed_card_prices
+
 
 def html_convert_cards(cards):
     data = ""
@@ -107,6 +110,7 @@ def html_convert_cards(cards):
 
     return data
 
+
 def format_price_and_edition(prices):
     data = ""
     for price in prices:
@@ -118,12 +122,13 @@ def parse_request(cards_requested):
     cards_requested = cards_requested.lower().splitlines()
     return cards_requested
 
+
 def search_card(card_name):
     # Download the search page
     payload = {"mainPage": "showSearchResult", "searchFor": card_name}
     URL = "https://it.magiccardmarket.eu/"
     HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.10 Safari/537.36'}
-    r = requests.get(URL , params=payload, headers=HEADERS)
+    r = requests.get(URL, params=payload, headers=HEADERS)
 
     # Code for 1-page-card
     if "Products" in r.url:
@@ -131,19 +136,23 @@ def search_card(card_name):
         return [single_card_href]
 
     card_hrefs = parse_search_page(r.text, card_name)
+
     return card_hrefs
+
 
 def parse_search_page(body, card_name):
     parsed_card_hrefs = []
 
     d = pq(body, parser="html")
-    card_hrefs = d("tbody > tr > td.col_3 > a").items()
+    card_hrefs = d("tbody > tr > td > a").items()
 
     for href in card_hrefs:
         if href.text().lower() == card_name:
             parsed_card_hrefs.append(href.attr("href"))
 
+
     return parsed_card_hrefs
+
 
 def get_card_prices(card_hrefs):
     card_urls = []
@@ -154,6 +163,7 @@ def get_card_prices(card_hrefs):
 
     card_prices = concurrent_download(card_urls)
     return card_prices
+
 
 def concurrent_download(urls):
     q = Queue()
@@ -190,6 +200,7 @@ def concurrent_download(urls):
         card_prices.append(parse_price_page(res))
 
     return card_prices
+
 
 def parse_price_page(body):
     d = pq(body, parser="html")
